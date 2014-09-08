@@ -19,7 +19,7 @@ set (LIBRARY_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/lib" CACHE PATH
 set (EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin" CACHE PATH
   "Target directory for all executables.")
 
-# Can only use C++0x in Ubuntu 10.04 GCC 4.6
+# Can only use C++0x in Ubuntu 12.04 GCC 4.6
 add_definitions(-Wall -std=c++0x)
 
 set(AprilTags_VERSION_MAJOR 1)

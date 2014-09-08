@@ -127,10 +127,8 @@ void TagDetection::getRelativeTranslationRotation(double tag_size, double fx, do
   Eigen::Matrix4d MT = M*T;
   // translation vector from camera to the April tag
   trans = MT.col(3).head(3);
-  // orientation of April tag with respect to camera: the camera
-  // convention makes more sense here, because yaw,pitch,roll then
-  // naturally agree with the orientation of the object
-  rot = T.block(0,0,3,3);
+  // rotation from camera to the April tag
+  rot = MT.block(0,0,3,3); // NOTE HH changed this to not be camera!!
 }
 
 // draw one April tag detection on actual image
