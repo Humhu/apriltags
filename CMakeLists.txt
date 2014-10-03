@@ -28,8 +28,8 @@ set(AprilTags_VERSION "${AprilTags_VERSION_MAJOR}.${AprilTags_VERSION_MINOR}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
-# OpenCV for camera interface
-find_package(OpenCV 2 REQUIRED HINTS /home/humphreh/Software/opencv-2.4.6.1/install)
+# OpenCV for camera interface, looks for a symlink
+find_package(OpenCV 2 REQUIRED HINTS ~/Software/opencv/install)
 message(STATUS "OpenCV found at: ${OpenCV_INCLUDE_DIRS}")
 include_directories(${OpenCV_INCLUDE_DIRS})
 list(APPEND AprilTags_LIBS ${OpenCV_LIBS})
