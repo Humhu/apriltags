@@ -334,12 +334,23 @@ public:
       cerr << "ERROR: Can't find video device " << m_deviceId << "\n";
       exit(1);
     }
-    m_cap.set(CV_CAP_PROP_FRAME_WIDTH, m_width);
+    
+#if OPENCV3
+	m_cap.set(cv::CAP_PROP_FRAME_WIDTH, m_width);
+    m_cap.set(cv::CAP_PROP_FRAME_HEIGHT, m_height);
+    cout << "Camera successfully opened (ignore error messages above...)" << endl;
+    cout << "Actual resolution: "
+         << m_cap.get(cv::CAP_PROP_FRAME_WIDTH) << "x"
+         << m_cap.get(cv::CAP_PROP_FRAME_HEIGHT) << endl;
+#else
+	m_cap.set(CV_CAP_PROP_FRAME_WIDTH, m_width);
     m_cap.set(CV_CAP_PROP_FRAME_HEIGHT, m_height);
     cout << "Camera successfully opened (ignore error messages above...)" << endl;
     cout << "Actual resolution: "
          << m_cap.get(CV_CAP_PROP_FRAME_WIDTH) << "x"
          << m_cap.get(CV_CAP_PROP_FRAME_HEIGHT) << endl;
+#endif
+    
 
   }
 
@@ -390,7 +401,12 @@ public:
     //      m_cap.retrieve(image);
 
     // detect April tags (requires a gray scale image)
+#if OPENCV3
+	cv::cvtColor(image, image_gray, cv::COLOR_BGR2GRAY);
+#else
     cv::cvtColor(image, image_gray, CV_BGR2GRAY);
+#endif
+	
     double t0;
     if (m_timing) {
       t0 = tic();
