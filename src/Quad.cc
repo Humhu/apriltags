@@ -34,7 +34,8 @@ Quad::Quad(const std::vector< std::pair<float,float> >& p, const std::pair<float
 #endif
 }
 
-std::pair<float,float> Quad::interpolate(float x, float y) {
+std::pair<float,float> Quad::interpolate(float x, float y) const 
+{
 #ifdef INTERPOLATE
   Eigen::Vector2f r1 = p0 + p01 * (x+1.)/2.;
   Eigen::Vector2f r2 = p3 + p32 * (x+1.)/2.;
@@ -45,7 +46,8 @@ std::pair<float,float> Quad::interpolate(float x, float y) {
 #endif
 }
 
-std::pair<float,float> Quad::interpolate01(float x, float y) {
+std::pair<float,float> Quad::interpolate01(float x, float y) const
+{
   return interpolate(2*x-1, 2*y-1);
 }
 

@@ -51,7 +51,7 @@ public:
 #endif
 
   //! Note that the returned H matrix does not reflect cxy.
-  Eigen::Matrix3d& getH();
+  Eigen::Matrix3d getH() const;
 
   const std::pair<float,float> getCXY() const { return cxy; }
 

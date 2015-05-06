@@ -1,8 +1,8 @@
-# AprilTags2 CMake files
+# apriltags CMake files
 # Humphrey Hu, 2014
 # Originally by Michael Kaess
 
-project(AprilTags)
+project(apriltags)
 
 cmake_minimum_required(VERSION 2.8)
 
@@ -22,29 +22,30 @@ set (EXECUTABLE_OUTPUT_PATH "${PROJECT_SOURCE_DIR}/bin" CACHE PATH
 # Can only use C++0x in Ubuntu 12.04 GCC 4.6
 add_definitions(-Wall -std=c++0x)
 
-set(AprilTags_VERSION_MAJOR 1)
-set(AprilTags_VERSION_MINOR 0)
-set(AprilTags_VERSION "${AprilTags_VERSION_MAJOR}.${AprilTags_VERSION_MINOR}")
+set(apriltags_VERSION_MAJOR 1)
+set(apriltags_VERSION_MINOR 0)
+set(apriltags_VERSION "${apriltags_VERSION_MAJOR}.${apriltags_VERSION_MINOR}")
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake")
 
 # OpenCV for camera interface, looks for a symlink
-find_package(OpenCV REQUIRED HINTS ~/Software/opencv/install)
+find_package(OpenCV)
 message(STATUS "OpenCV found at: ${OpenCV_INCLUDE_DIRS}")
 include_directories(${OpenCV_INCLUDE_DIRS})
-list(APPEND AprilTags_LIBS ${OpenCV_LIBS})
+list(APPEND apriltags_LIBS ${OpenCV_LIBS})
 if( OpenCV_VERSION VERSION_EQUAL "3")
 	add_definitions("-DOPENCV3=1")
+	list(APPEND apriltags_DEFS "-DOPENCV3=1")
 endif()
 
 find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
-list(APPEND AprilTags_LIBS ${EIGEN_LIBRARIES})
+list(APPEND apriltags_INCLUDES ${EIGEN_INCLUDE_DIRS} )
 
 # Camera drivers
 find_package(V4L2 REQUIRED)
 include_directories(${V4L2_INCLUDE_DIRS})
-list(APPEND AprilTags_LIBS ${V4L2_LIBRARIES})
+list(APPEND apriltags_LIBS ${V4L2_LIBRARIES})
 
 # AprilTag headers
 include_directories("${PROJECT_SOURCE_DIR}/include")
@@ -57,18 +58,18 @@ add_subdirectory(src)
 add_subdirectory(example)
 
 export(TARGETS apriltags
-    FILE "${PROJECT_BINARY_DIR}/ArgusTargets.cmake")
+    FILE "${PROJECT_BINARY_DIR}/apriltagsTargets.cmake")
 
-configure_file(AprilTagsConfig.cmake.in
-    "${PROJECT_BINARY_DIR}/AprilTagsConfig.cmake" @ONLY)
+configure_file(apriltagsConfig.cmake.in
+    "${PROJECT_BINARY_DIR}/apriltagsConfig.cmake" @ONLY)
 
-configure_file(AprilTagsConfigVersion.cmake.in
-    "${PROJECT_BINARY_DIR}/AprilTagsConfigVersion.cmake" @ONLY)
+configure_file(apriltagsConfigVersion.cmake.in
+    "${PROJECT_BINARY_DIR}/apriltagsConfigVersion.cmake" @ONLY)
 
 install(FILES
-    "${PROJECT_BINARY_DIR}/AprilTagsConfig.cmake"
-    "${PROJECT_BINARY_DIR}/AprilTagsConfigVersion.cmake"
+    "${PROJECT_BINARY_DIR}/apriltagsConfig.cmake"
+    "${PROJECT_BINARY_DIR}/apriltagsConfigVersion.cmake"
     DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT dev)
 
-install(EXPORT AprilTagsTargets
+install(EXPORT apriltagsTargets
     DESTINATION "${CMAKE_INSTALL_PREFIX}" COMPONENT dev)

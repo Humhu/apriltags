@@ -83,6 +83,10 @@ const unsigned long long t36h11_other[] =
    0x43d506f47LL, 0x8e90eed24LL, 0x9c04974e9LL, 0x953aef583LL, 0x3d839c1bcLL, 0x0348ac64fLL, 0x2a1284fc1LL, 0x9fc565ccdLL,
    0x57118e8c4LL};
 
-static const TagCodes tagCodes36h11_other = TagCodes(36, 11, t36h11_other, sizeof(t36h11_other)/sizeof(t36h11_other[0]));
+static const TagCodes tagCodes36h11_other = TagCodes(36, 
+													 11, 
+													 t36h11_other, 
+													 sizeof(t36h11_other)/sizeof(t36h11_other[0]),
+													 "36h11_other");
 
 }

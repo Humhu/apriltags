@@ -13,8 +13,9 @@ Homography33::Homography33(const std::pair<float,float> &opticalCenter) : cxy(op
   H.setZero();
 }
 
-Eigen::Matrix3d& Homography33::getH() {
-  compute();
+Eigen::Matrix3d Homography33::getH() const
+{
+//   compute();
   return H;
 }
 

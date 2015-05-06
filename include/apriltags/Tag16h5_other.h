@@ -12,6 +12,10 @@ const unsigned long long t16h5_other[] =
     0xd32bLL, 0x1867LL, 0x468fLL, 0xdc91LL, 0x4940LL, 0xa9edLL, 0x2bd5LL, 0x599aLL,
     0x9009LL, 0x61f6LL, 0x3850LL, 0x8157LL, 0xbfcaLL, 0x987cLL};
 
-static const TagCodes tagCodes16h5_other = TagCodes(16, 5, t16h5_other, sizeof(t16h5_other)/sizeof(t16h5_other[0]));
+static const TagCodes tagCodes16h5_other = TagCodes(16, 
+													5, 
+													t16h5_other, 
+													sizeof(t16h5_other)/sizeof(t16h5_other[0]),
+													"16h5_other" );
 
 }

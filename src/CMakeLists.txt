@@ -12,6 +12,7 @@ set(SRCS
     Quad.cc
     Segment.cc
     TagDetection.cc
+    TagDetectionUtils.cc
     TagDetector.cc
     TagFamily.cc
     UnionFindSimple.cc)
@@ -26,9 +27,9 @@ set_target_properties(apriltags PROPERTIES
     PUBLIC_HEADER "${HEADERS}")
 
 install(TARGETS apriltags
-    EXPORT AprilTagsTargets
+    EXPORT apriltagsTargets
     LIBRARY DESTINATION "${LIBRARY_INSTALL_DIR}" COMPONENT shlib
     PUBLIC_HEADER DESTINATION "${INCLUDE_INSTALL_DIR}"
     COMPONENT dev)
 
-target_link_libraries(apriltags ${AprilTags_LIBS})
+target_link_libraries(apriltags ${apriltags_LIBS})
