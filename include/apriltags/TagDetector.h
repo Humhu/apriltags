@@ -9,8 +9,33 @@
 #include "apriltags/TagDetection.h"
 #include "apriltags/TagFamily.h"
 
-namespace AprilTags {
+namespace apriltags {
 
+	// Temporary
+	struct TagDetectorParameters
+	{
+		// Quad params
+		unsigned int minClusterPixels;
+		unsigned int maxNumMaxima;
+		float criticalAngle; // In radians
+		float maxLineFitMSE;
+		int minWhiteBlackDiff;
+		bool deglitch;
+		
+		// Other params
+		float quadDecimate;
+		float quadSigma;
+		bool refineEdges;
+		bool refineDecode;
+		bool refinePose;
+		
+		TagDetectorParameters() 
+			: minClusterPixels( 5 ), maxNumMaxima( 10 ), criticalAngle( M_PI/18 ),
+			maxLineFitMSE( 1.0 ), minWhiteBlackDiff( 15 ), deglitch( false ),
+			refineEdges( true ), refinePose( false ), refineDecode( false )
+		{}
+	};
+	
     class TagDetector {
     public:
 
@@ -20,9 +45,11 @@ namespace AprilTags {
 
         //! Constructor
         // note: TagFamily is instantiated here from TagCodes
-        TagDetector(const TagCodes& tagCodes) : thisTagFamily(tagCodes) {}
+        TagDetector(const TagCodes& tagCodes) 
+			: thisTagFamily(tagCodes) 
+		{}
 
-        std::vector<TagDetection> extractTags(const cv::Mat& image) const;
+        std::vector<TagDetection> ExtractTags(const cv::Mat& image) const;
 
     };
 	

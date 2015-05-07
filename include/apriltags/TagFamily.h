@@ -8,15 +8,19 @@
 #include <map>
 
 #include "apriltags/TagDetection.h"
-namespace AprilTags {
+namespace apriltags
+{
 
-	class TagCodes {
+	class TagCodes 
+	{
 	public:
 		int bits;
 		int minHammingDistance;
 		std::vector<unsigned long long> codes;
 		std::string name;
+		
 	public:
+		
 		TagCodes(int bits, int minHammingDistance,
 				const unsigned long long* codesA, int num,
 				const std::string& _name)
@@ -27,7 +31,8 @@ namespace AprilTags {
 	};
 
 	//! Generic class for all tag encoding families
-	class TagFamily {
+	class TagFamily 
+	{
 	public:
 		//! The codes array is not copied internally and so must not be modified externally.
 		TagFamily(const TagCodes& tagCodes);
