@@ -10,7 +10,6 @@
 
 namespace AprilTags {
 
-class FloatImage;
 class Segment;
 
 using std::min;
@@ -56,7 +55,7 @@ public:
    *  @param parent the first segment in the quad
    *  @param depth how deep in the search are we?
    */
-  static void search(const FloatImage& fImage, std::vector<Segment*>& path,
+  static void search(std::vector<Segment*>& path,
                      Segment& parent, int depth, std::vector<Quad>& quads,
                      const std::pair<float,float>& opticalCenter);
 

@@ -19,18 +19,11 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat& image) const {
 	// convert to internal AprilTags image (todo: slow, change internally to OpenCV)
 	int width = image.cols;
 	int height = image.rows;
-	FloatImage fimOrig(width, height);
-	int i = 0;
-	for (int y=0; y<height; y++) 
-	{
-		for (int x=0; x<width; x++) 
-		{
-			fimOrig.set(x, y, image.data[i]/255.);
-			i++;
-		}
-	}
+	
 	std::pair<int,int> opticalCenter(width/2, height/2);
-
+	cv::Mat fimOrigCV;
+	image.convertTo( fimOrigCV, CV_32FC1, 1.0/255.0 );
+	
 	//================================================================
 	// Step one: preprocess image (convert to grayscale) and low pass if necessary
 	
@@ -39,23 +32,23 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat& image) const {
 	// This step is quite sensitve to noise, since a few bad theta estimates will
 	// break up segments, causing us to miss Quads. It is useful to do a Gaussian
 	// low pass on this step even if we don't want it for encoding.
-	FloatImage fim, fimSeg, fimTheta, fimMag;
-	preprocess_image( fimOrig, fim, fimSeg, fimTheta, fimMag );
+	cv::Mat fimCV, fimSegCV, fimThetaCV, fimMagCV;
+	preprocess_image( fimOrigCV, fimCV, fimSegCV, fimThetaCV, fimMagCV );
 	
 	//================================================================
 	// Step three. Extract edges by grouping pixels with similar
 	// thetas together. This is a greedy algorithm: we start with
 	// the most similar pixels.  We use 4-connectivity.
-	UnionFindSimple uf(fimSeg.getWidth()*fimSeg.getHeight());
-	extract_edges( fimSeg, fimMag, fimTheta, uf );
-		
+	UnionFindSimple uf( fimSegCV.cols*fimSegCV.rows );
+	extract_edges( fimSegCV, fimMagCV, fimThetaCV, uf );
+	
 	// Steps 4-5
 	std::vector<Segment> segments;
-	fit_segments( fimSeg, fimMag, fimTheta, uf, segments );
+	fit_segments( fimSegCV, fimMagCV, fimThetaCV, uf, segments );
 
 	// Steps 6-7
 	std::vector<Quad> quads;
-	find_quads( segments, fimOrig, opticalCenter, quads );
+	find_quads( segments, fimOrigCV.size(), opticalCenter, quads );
 
 	//================================================================
 	// Step eight. Decode the quads. For each quad, we first estimate a
@@ -67,7 +60,7 @@ std::vector<TagDetection> TagDetector::extractTags(const cv::Mat& image) const {
 	//broken lines. When two quads (with the same id) overlap, we will
 	//keep the one with the lowest error, and if the error is the same,
 	//the one with the greatest observed perimeter.
-	return decode_quads( fim, quads, thisTagFamily );
+	return decode_quads( fimCV, quads, thisTagFamily );
 }
 
 } // namespace

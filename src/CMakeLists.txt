@@ -2,8 +2,6 @@ cmake_minimum_required(VERSION 2.8)
 
 set(SRCS
     Edge.cc
-    FloatImage.cc
-    Gaussian.cc
     GLine2D.cc
     GLineSegment2D.cc
     GrayModel.cc

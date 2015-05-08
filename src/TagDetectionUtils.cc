@@ -1,6 +1,5 @@
 #include "apriltags/TagDetectionUtils.h"
 
-#include "apriltags/Gaussian.h"
 #include "apriltags/Edge.h"
 #include "apriltags/GLine2D.h"
 #include "apriltags/GLineSegment2D.h"
@@ -11,12 +10,10 @@
 namespace AprilTags
 {
 	
-	void preprocess_image( const FloatImage& orig, FloatImage& fim, 
-					   FloatImage& fimSeg, FloatImage& fimTheta, FloatImage& fimMag,
+void preprocess_image( const cv::Mat& orig, cv::Mat& filtered, 
+					   cv::Mat& filteredSeg, cv::Mat& filteredTheta, cv::Mat& filteredMag,
 					   float sigma, float segSigma )
-{
-	fim = orig;
-
+	{
 	//! Gaussian smoothing kernel applied to image (0 == no filter).
 	/*! Used when sampling bits. Filtering is a good idea in cases
 	* where A) a cheap camera is introducing artifical sharpening, B)
@@ -34,56 +31,57 @@ namespace AprilTags
 	* operation.
 	*/
 
-	if (sigma > 0) {
-		int filtsz = ((int) max(3.0f, 3*sigma)) | 1;
-		std::vector<float> filt = Gaussian::makeGaussianFilter(sigma, filtsz);
-		fim.filterFactoredCentered(filt, filt);
-	}	
+	if (sigma > 0) 
+	{
+		int filtsz = ((int) max(3.0f, 3*sigma)) | 1; // Forces to be odd
+		cv::Size ksize( filtsz, filtsz );
+		cv::GaussianBlur( orig, filtered, ksize, sigma, sigma );
+	}
+	else
+	{
+		orig.copyTo( filtered );
+	}
 	
-	fimSeg = FloatImage();
-	if (segSigma > 0) {
-		if (segSigma == sigma) {
-			fimSeg = fim;
-		} else {
-		// blur anew
-		int filtsz = ((int) max(3.0f, 3*segSigma)) | 1;
-		std::vector<float> filt = Gaussian::makeGaussianFilter(segSigma, filtsz);
-		fimSeg = orig;
-		fimSeg.filterFactoredCentered(filt, filt);
+	if (segSigma > 0) 
+	{
+		if (segSigma == sigma) 
+		{
+			filtered.copyTo( filteredSeg );
+		} 
+		else 
+		{
+			// blur anew
+			int filtsz = ((int) max(3.0f, 3*segSigma)) | 1;
+			cv::Size ksize( filtsz, filtsz );
+			cv::GaussianBlur( orig, filteredSeg, ksize, segSigma, segSigma );
 		}
-	} else {
-		fimSeg = orig;
+	} 
+	else 
+	{
+		orig.copyTo( filteredSeg );
 	}
 
-	fimTheta = FloatImage(fimSeg.getWidth(), fimSeg.getHeight());
-	fimMag = FloatImage(fimSeg.getWidth(), fimSeg.getHeight());
+	filteredTheta = cv::Mat( filteredSeg.size(), CV_32FC1 );
+	filteredMag = cv::Mat( filteredSeg.size(), CV_32FC1 );
 
-	#pragma omp parallel for
-	for (int y = 1; y < fimSeg.getHeight()-1; y++) {
-		for (int x = 1; x < fimSeg.getWidth()-1; x++) {
-		float Ix = fimSeg.get(x+1, y) - fimSeg.get(x-1, y);
-		float Iy = fimSeg.get(x, y+1) - fimSeg.get(x, y-1);
-
-		float mag = Ix*Ix + Iy*Iy;
-	#if 0 // kaess: fast version, but maybe less accurate?
-		// TODO Benchmark with libbams
-		float theta = MathUtil::fast_atan2(Iy, Ix);
-	#else
-		float theta = atan2(Iy, Ix);
-	#endif
-		
-		fimTheta.set(x, y, theta);
-		fimMag.set(x, y, mag);
-		}
+	for( int i = 1; i < filteredSeg.rows-1; i++ )
+	{
+		for( int j = 1; j < filteredSeg.cols-1; j++ )
+		{
+			float Ix = filteredSeg.at<float>(i,j+1) - filteredSeg.at<float>(i,j-1);
+			float Iy = filteredSeg.at<float>(i+1,j) - filteredSeg.at<float>(i-1,j);
+			filteredTheta.at<float>(i,j) = std::atan2(Iy, Ix);
+			filteredMag.at<float>(i,j) = Ix*Ix + Iy*Iy;
+		}	
 	}
 }
-	
-void extract_edges( const FloatImage& fimSeg, const FloatImage& fimMag,
-					const FloatImage& fimTheta, UnionFindSimple& uf )
+
+void extract_edges( const cv::Mat& filteredSeg, const cv::Mat& filteredMag,
+					const cv::Mat& filteredTheta, UnionFindSimple& uf )
 {
 
-	int width = fimSeg.getWidth();
-	int height = fimSeg.getHeight();
+	int width = filteredSeg.cols;
+	int height = filteredSeg.rows;
 	
 	std::vector<Edge> edges(width*height*4);
 	size_t nEdges = 0;
@@ -104,18 +102,18 @@ void extract_edges( const FloatImage& fimSeg, const FloatImage& fimMag,
 		for (int y = 0; y+1 < height; y++) {
 		for (int x = 0; x+1 < width; x++) {
 									
-			float mag0 = fimMag.get(x,y);
+			float mag0 = filteredMag.at<float>(y,x);
 			if (mag0 < Edge::minMag)
 			continue;
 			mmax[y*width+x] = mag0;
 			mmin[y*width+x] = mag0;
 									
-			float theta0 = fimTheta.get(x,y);
+			float theta0 = filteredTheta.at<float>(y,x);
 			tmin[y*width+x] = theta0;
 			tmax[y*width+x] = theta0;
 									
 			// Calculates then adds edges to 'vector<Edge> edges'
-			Edge::calcEdges(theta0, x, y, fimTheta, fimMag, edges, nEdges);
+			Edge::calcEdges(theta0, x, y, filteredTheta, filteredMag, edges, nEdges);
 									
 			// TODO Would 8 connectivity help for rotated tags?
 			// Probably not much, so long as input filtering hasn't been disabled.
@@ -128,20 +126,20 @@ void extract_edges( const FloatImage& fimSeg, const FloatImage& fimMag,
 	}
 }
 
-void fit_segments( const FloatImage& fimSeg, const FloatImage& fimMag, 
-				   const FloatImage& fimTheta, UnionFindSimple& uf,
+void fit_segments( const cv::Mat& filteredSeg, const cv::Mat& filteredMag, 
+				   const cv::Mat& filteredTheta, UnionFindSimple& uf,
 				   std::vector<Segment>& segments )
 {
 	//================================================================
 	// Step four: Loop over the pixels again, collecting statistics for each cluster.
 	// We will soon fit lines (segments) to these points.
 	std::map<int, std::vector<XYWeight> > clusters;
-	for (int y = 0; y+1 < fimSeg.getHeight(); y++) {
-		for (int x = 0; x+1 < fimSeg.getWidth(); x++) {
-		if (uf.getSetSize(y*fimSeg.getWidth()+x) < Segment::minimumSegmentSize)
+	for (int y = 0; y+1 < filteredSeg.rows; y++) {
+		for (int x = 0; x+1 < filteredSeg.cols; x++) {
+		if (uf.getSetSize(y*filteredSeg.cols+x) < Segment::minimumSegmentSize)
 		continue;
 
-		int rep = (int) uf.getRepresentative(y*fimSeg.getWidth()+x);
+		int rep = (int) uf.getRepresentative(y*filteredSeg.cols+x);
 		
 		std::map<int, std::vector<XYWeight> >::iterator it = clusters.find(rep);
 		if ( it == clusters.end() ) {
@@ -149,7 +147,7 @@ void fit_segments( const FloatImage& fimSeg, const FloatImage& fimMag,
 		it = clusters.find(rep);
 		}
 		std::vector<XYWeight> &points = it->second;
-		points.push_back(XYWeight(x,y,fimMag.get(x,y)));
+		points.push_back(XYWeight(x,y,filteredMag.at<float>(y,x)));
 		}
 	}
 
@@ -185,8 +183,8 @@ void fit_segments( const FloatImage& fimSeg, const FloatImage& fimMag,
 		for (unsigned int i = 0; i < points.size(); i++) {
 		XYWeight xyw = points[i];
 		
-		float theta = fimTheta.get((int) xyw.x, (int) xyw.y);
-		float mag = fimMag.get((int) xyw.x, (int) xyw.y);
+		float theta = filteredTheta.at<float>((int) xyw.y, (int) xyw.x);
+		float mag = filteredMag.at<float>((int) xyw.y, (int) xyw.x);
 
 		// err *should* be +M_PI/2 for the correct winding, but if we
 		// got the wrong winding, it'll be around -M_PI/2.
@@ -217,12 +215,12 @@ void fit_segments( const FloatImage& fimSeg, const FloatImage& fimMag,
 	}
 }
 
-void find_quads( std::vector<Segment>& segments, const FloatImage& fimOrig,
+void find_quads( std::vector<Segment>& segments, const cv::Size imSize,
 				 const std::pair<int,int>& opticalCenter, std::vector<Quad>& quads)
 {
 	
-	int width = fimOrig.getWidth();
-	int height = fimOrig.getHeight();
+	int width = imSize.width;
+	int height = imSize.height;
 	
 	// Step six: For each segment, find segments that begin where this segment ends.
 	// (We will chain segments together next...) The gridder accelerates the search by
@@ -279,11 +277,11 @@ void find_quads( std::vector<Segment>& segments, const FloatImage& fimOrig,
 	std::vector<Segment*> tmp(5);
 	for (unsigned int i = 0; i < segments.size(); i++) {
 		tmp[0] = &segments[i];
-		Quad::search(fimOrig, tmp, segments[i], 0, quads, opticalCenter);
+		Quad::search(tmp, segments[i], 0, quads, opticalCenter);
 	}
 }
 
-std::vector<TagDetection> decode_quads( const FloatImage& fim,
+std::vector<TagDetection> decode_quads( const cv::Mat& filtered,
 										const std::vector<Quad>& quads,
 										const TagFamily& family )
 {
@@ -292,8 +290,8 @@ std::vector<TagDetection> decode_quads( const FloatImage& fim,
 	// threshold color to decide between 0 and 1. Then, we read off the
 	// bits and see if they make sense.
 	std::vector<TagDetection> detections;
-	int width = fim.getWidth();
-	int height = fim.getHeight();
+	int width = filtered.cols;
+	int height = filtered.rows;
 
 	for (unsigned int qi = 0; qi < quads.size(); qi++ ) {
 		const Quad &quad = quads[qi];
@@ -313,7 +311,7 @@ std::vector<TagDetection> decode_quads( const FloatImage& fim,
 				int iry = (int) (pxy.second + 0.5);
 				if (irx < 0 || irx >= width || iry < 0 || iry >= height)
 					continue;
-				float v = fim.get(irx, iry);
+				float v = filtered.at<float>(iry, irx);
 				if (iy == -1 || iy == dd || ix == -1 || ix == dd)
 					whiteModel.addObservation(x, y, v);
 				else if (iy == 0 || iy == (dd-1) || ix == 0 || ix == (dd-1))
@@ -339,7 +337,7 @@ std::vector<TagDetection> decode_quads( const FloatImage& fim,
 					continue;
 				}
 				float threshold = (blackModel.interpolate(x,y) + whiteModel.interpolate(x,y)) * 0.5f;
-				float v = fim.get(irx, iry);
+				float v = filtered.at<float>(iry, irx);
 				tagCode = tagCode << 1;
 				
 				if ( v > threshold)

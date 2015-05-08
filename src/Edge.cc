@@ -1,5 +1,4 @@
 #include "apriltags/Edge.h"
-#include "apriltags/FloatImage.h"
 #include "apriltags/MathUtil.h"
 #include "apriltags/UnionFindSimple.h"
 
@@ -24,13 +23,13 @@ int Edge::edgeCost(float  theta0, float theta1, float mag1) {
 }
 
 void Edge::calcEdges(float theta0, int x, int y,
-		     const FloatImage& theta, const FloatImage& mag,
+		     const cv::Mat& theta, const cv::Mat& mag,
 		     std::vector<Edge> &edges, size_t &nEdges) {
-  int width = theta.getWidth();
+  int width = theta.cols;
   int thisPixel = y*width+x;
 
   // horizontal edge
-  int cost1 = edgeCost(theta0, theta.get(x+1,y), mag.get(x+1,y));
+  int cost1 = edgeCost(theta0, theta.at<float>(y,x+1), mag.at<float>(y,x+1));
   if (cost1 >= 0) {
     edges[nEdges].cost = cost1;
     edges[nEdges].pixelIdxA = thisPixel;
@@ -39,7 +38,7 @@ void Edge::calcEdges(float theta0, int x, int y,
   }
 
   // vertical edge
-  int cost2 = edgeCost(theta0, theta.get(x, y+1), mag.get(x,y+1));
+  int cost2 = edgeCost(theta0, theta.at<float>(y+1,x), mag.at<float>(y+1,x));
   if (cost2 >= 0) {
     edges[nEdges].cost = cost2;
     edges[nEdges].pixelIdxA = thisPixel;
@@ -48,7 +47,7 @@ void Edge::calcEdges(float theta0, int x, int y,
   }
   
   // downward diagonal edge
-  int cost3 = edgeCost(theta0, theta.get(x+1, y+1), mag.get(x+1,y+1));
+  int cost3 = edgeCost(theta0, theta.at<float>(y+1,x+1), mag.at<float>(y+1,x+1));
   if (cost3 >= 0) {
     edges[nEdges].cost = cost3;
     edges[nEdges].pixelIdxA = thisPixel;
@@ -57,7 +56,7 @@ void Edge::calcEdges(float theta0, int x, int y,
   }
 
   // updward diagonal edge
-  int cost4 = (x == 0) ? -1 : edgeCost(theta0, theta.get(x-1, y+1), mag.get(x-1,y+1));
+  int cost4 = (x == 0) ? -1 : edgeCost(theta0, theta.at<float>(y+1,x-1), mag.at<float>(y+1,x-1));
   if (cost4 >= 0) {
     edges[nEdges].cost = cost4;
     edges[nEdges].pixelIdxA = thisPixel;
