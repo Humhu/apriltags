@@ -2,6 +2,8 @@
 #include "apriltags/MathUtil.h"
 #include "apriltags/UnionFindSimple.h"
 
+using namespace bam;
+
 namespace AprilTags {
 
 float const Edge::minMag = 0.004f;
@@ -10,11 +12,13 @@ int const Edge::WEIGHT_SCALE = 100;
 float const Edge::thetaThresh = 100;
 float const Edge::magThresh = 1200;
 
-int Edge::edgeCost(float  theta0, float theta1, float mag1) {
+int Edge::edgeCost(BAM32 theta0, BAM32 theta1, float mag1) {
   if (mag1 < minMag)  // mag0 was checked by the main routine so no need to recheck here
     return -1;
 
-  const float thetaErr = std::abs(MathUtil::mod2pi(theta1 - theta0));
+//   BAM32 theta1b( theta1v );
+//   float theta1 = theta1b.ToDouble();
+  const float thetaErr = std::abs(MathUtil::mod2pi(theta1.ToDouble() - theta0.ToDouble()));
   if (thetaErr > maxEdgeCost)
     return -1;
 
@@ -22,14 +26,15 @@ int Edge::edgeCost(float  theta0, float theta1, float mag1) {
   return (int) (normErr*WEIGHT_SCALE);
 }
 
-void Edge::calcEdges(float theta0, int x, int y,
+void Edge::calcEdges(BAM32 bheta0, int x, int y,
 		     const cv::Mat& theta, const cv::Mat& mag,
 		     std::vector<Edge> &edges, size_t &nEdges) {
   int width = theta.cols;
   int thisPixel = y*width+x;
 
   // horizontal edge
-  int cost1 = edgeCost(theta0, theta.at<float>(y,x+1), mag.at<float>(y,x+1));
+//   BAM32 bheta0( theta0 );
+  int cost1 = edgeCost(bheta0, BAM32(theta.at<int>(y,x+1)), mag.at<float>(y,x+1));
   if (cost1 >= 0) {
     edges[nEdges].cost = cost1;
     edges[nEdges].pixelIdxA = thisPixel;
@@ -38,7 +43,7 @@ void Edge::calcEdges(float theta0, int x, int y,
   }
 
   // vertical edge
-  int cost2 = edgeCost(theta0, theta.at<float>(y+1,x), mag.at<float>(y+1,x));
+  int cost2 = edgeCost(bheta0, BAM32(theta.at<int>(y+1,x)), mag.at<float>(y+1,x));
   if (cost2 >= 0) {
     edges[nEdges].cost = cost2;
     edges[nEdges].pixelIdxA = thisPixel;
@@ -47,7 +52,7 @@ void Edge::calcEdges(float theta0, int x, int y,
   }
   
   // downward diagonal edge
-  int cost3 = edgeCost(theta0, theta.at<float>(y+1,x+1), mag.at<float>(y+1,x+1));
+  int cost3 = edgeCost(bheta0, BAM32(theta.at<int>(y+1,x+1)), mag.at<float>(y+1,x+1));
   if (cost3 >= 0) {
     edges[nEdges].cost = cost3;
     edges[nEdges].pixelIdxA = thisPixel;
@@ -56,7 +61,7 @@ void Edge::calcEdges(float theta0, int x, int y,
   }
 
   // updward diagonal edge
-  int cost4 = (x == 0) ? -1 : edgeCost(theta0, theta.at<float>(y+1,x-1), mag.at<float>(y+1,x-1));
+  int cost4 = (x == 0) ? -1 : edgeCost(bheta0, BAM32(theta.at<int>(y+1,x-1)), mag.at<float>(y+1,x-1));
   if (cost4 >= 0) {
     edges[nEdges].cost = cost4;
     edges[nEdges].pixelIdxA = thisPixel;

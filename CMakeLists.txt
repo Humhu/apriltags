@@ -42,6 +42,11 @@ find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
 list(APPEND apriltags_INCLUDES ${EIGEN_INCLUDE_DIRS} )
 
+find_package(bam)
+include_directories(${bam_INCLUDE_DIRS})
+list(APPEND apriltags_LIBS ${bam_LIBRARIES})
+list(APPEND apriltags_EXPORT_LIBS ${bam_LIBRARIES})
+
 # Camera drivers
 find_package(V4L2 REQUIRED)
 include_directories(${V4L2_INCLUDE_DIRS})

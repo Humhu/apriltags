@@ -4,7 +4,7 @@
 #include <vector>
 #include <opencv2/core/core.hpp>
 
-// #include "apriltags/FloatImage.h"
+#include "bam/bam.h"
 
 namespace AprilTags {
 
@@ -43,10 +43,10 @@ public:
     the two pixels.  Lower cost is better.  A cost of -1 means there
     is no edge here (intensity gradien fell below threshold).
    */
-  static int edgeCost(float  theta0, float theta1, float mag1);
+  static int edgeCost( bam::BAM32 theta0, bam::BAM32 theta1, float mag1);
 
   //! Calculates and inserts up to four edges into 'edges', a vector of Edges.
-  static void calcEdges(float theta0, int x, int y,
+  static void calcEdges( bam::BAM32 theta0, int x, int y,
 			const cv::Mat& theta, const cv::Mat& mag,
 			std::vector<Edge> &edges, size_t &nEdges);
 

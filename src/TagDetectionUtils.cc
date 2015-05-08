@@ -7,12 +7,20 @@
 #include "apriltags/MathUtil.h"
 #include "apriltags/Gridder.h"
 
+#include "apriltags/Timer.h"
+
+#include "bam/bam.h"
+
+#include "stdint.h"
+
+using namespace bam;
+
 namespace AprilTags
 {
 	
 void preprocess_image( const cv::Mat& orig, cv::Mat& filtered, 
 					   cv::Mat& filteredSeg, cv::Mat& filteredTheta, cv::Mat& filteredMag,
-					   float sigma, float segSigma )
+					   float sigma, float segSigma  )
 	{
 	//! Gaussian smoothing kernel applied to image (0 == no filter).
 	/*! Used when sampling bits. Filtering is a good idea in cases
@@ -31,6 +39,9 @@ void preprocess_image( const cv::Mat& orig, cv::Mat& filtered,
 	* operation.
 	*/
 
+// 	Timer timer;
+// 	timer.Start();
+	
 	if (sigma > 0) 
 	{
 		int filtsz = ((int) max(3.0f, 3*sigma)) | 1; // Forces to be odd
@@ -61,8 +72,10 @@ void preprocess_image( const cv::Mat& orig, cv::Mat& filtered,
 		orig.copyTo( filteredSeg );
 	}
 
-	filteredTheta = cv::Mat( filteredSeg.size(), CV_32FC1 );
+// 	timer.Lap( "[Filtering Done]" );
+	
 	filteredMag = cv::Mat( filteredSeg.size(), CV_32FC1 );
+ 	filteredTheta = cv::Mat( filteredSeg.size(), CV_32SC1 );
 
 	for( int i = 1; i < filteredSeg.rows-1; i++ )
 	{
@@ -70,14 +83,19 @@ void preprocess_image( const cv::Mat& orig, cv::Mat& filtered,
 		{
 			float Ix = filteredSeg.at<float>(i,j+1) - filteredSeg.at<float>(i,j-1);
 			float Iy = filteredSeg.at<float>(i+1,j) - filteredSeg.at<float>(i-1,j);
-			filteredTheta.at<float>(i,j) = std::atan2(Iy, Ix);
+			bam::BAM32 theta = bam::bamAtan2(Iy, Ix);
+			filteredTheta.at<int>(i,j) = theta.ToBinary();
 			filteredMag.at<float>(i,j) = Ix*Ix + Iy*Iy;
 		}	
 	}
+	
+// 	timer.Lap( "[Gradients Done]" );
+	
 }
 
 void extract_edges( const cv::Mat& filteredSeg, const cv::Mat& filteredMag,
-					const cv::Mat& filteredTheta, UnionFindSimple& uf )
+					const cv::Mat& filteredTheta,
+					UnionFindSimple& uf )
 {
 
 	int width = filteredSeg.cols;
@@ -94,10 +112,10 @@ void extract_edges( const cv::Mat& filteredSeg, const cv::Mat& filteredMag,
 		* That's already a problem for OS X (default 512KB thread stack size),
 		* could be a problem elsewhere for bigger images... so store on heap */
 		std::vector<float> storage(width*height*4);  // do all the memory in one big block, exception safe
-		float * tmin = &storage[width*height*0];
-		float * tmax = &storage[width*height*1];
-		float * mmin = &storage[width*height*2];
-		float * mmax = &storage[width*height*3];
+		float* tmin = &storage[width*height*0];
+		float* tmax = &storage[width*height*1];
+		float* mmin = &storage[width*height*2];
+		float* mmax = &storage[width*height*3];
 					
 		for (int y = 0; y+1 < height; y++) {
 		for (int x = 0; x+1 < width; x++) {
@@ -107,13 +125,13 @@ void extract_edges( const cv::Mat& filteredSeg, const cv::Mat& filteredMag,
 			continue;
 			mmax[y*width+x] = mag0;
 			mmin[y*width+x] = mag0;
-									
-			float theta0 = filteredTheta.at<float>(y,x);
-			tmin[y*width+x] = theta0;
-			tmax[y*width+x] = theta0;
+
+			BAM32 bheta0( filteredTheta.at<int>(y,x) );			
+			tmin[y*width+x] = bheta0.ToDouble();
+			tmax[y*width+x] = bheta0.ToDouble();
 									
 			// Calculates then adds edges to 'vector<Edge> edges'
-			Edge::calcEdges(theta0, x, y, filteredTheta, filteredMag, edges, nEdges);
+			Edge::calcEdges(bheta0, x, y, filteredTheta, filteredMag, edges, nEdges);
 									
 			// TODO Would 8 connectivity help for rotated tags?
 			// Probably not much, so long as input filtering hasn't been disabled.
@@ -183,7 +201,8 @@ void fit_segments( const cv::Mat& filteredSeg, const cv::Mat& filteredMag,
 		for (unsigned int i = 0; i < points.size(); i++) {
 		XYWeight xyw = points[i];
 		
-		float theta = filteredTheta.at<float>((int) xyw.y, (int) xyw.x);
+		BAM32 bheta( filteredTheta.at<int>((int) xyw.y, (int) xyw.x) );
+		float theta = bheta.ToDouble();
 		float mag = filteredMag.at<float>((int) xyw.y, (int) xyw.x);
 
 		// err *should* be +M_PI/2 for the correct winding, but if we
