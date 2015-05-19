@@ -154,6 +154,14 @@ void TagDetection::draw(cv::Mat& image) const {
   cv::putText(image, strSt.str(),
               cv::Point2f(cxy.first + 10, cxy.second + 10),
               cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255));
+  for( unsigned int i = 0; i < 4; i++ ) {
+		std::stringstream ss;
+		ss << i;
+		cv::putText(image, ss.str(),
+			cv::Point2f(p[i].first, p[i].second),
+			cv::FONT_HERSHEY_PLAIN, 1, cv::Scalar(0,0,255));
+  }
+  
 }
 
 } // namespace
