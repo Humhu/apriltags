@@ -26,19 +26,19 @@ namespace AprilTags {
 
     };
 	
-	/*! \brief Class that efficiently performs multi-family tag detections. */
-	class MultiTagDetector {
-	public:
-		
-		typedef std::shared_ptr<MultiTagDetector> Ptr;
-
-		const std::vector<TagFamily> tagFamilies;
-		
-		MultiTagDetector( const std::vector<TagFamily>& families ) : tagFamilies( families ) {}
-		
-		std::vector<TagDetection> extractTags( const cv::Mat& image ) const;
-		
-	};
+// 	/*! \brief Class that efficiently performs multi-family tag detections. */
+// 	class MultiTagDetector {
+// 	public:
+// 		
+// 		typedef std::shared_ptr<MultiTagDetector> Ptr;
+// 
+// 		const std::vector<TagFamily> tagFamilies;
+// 		
+// 		MultiTagDetector( const std::vector<TagFamily>& families ) : tagFamilies( families ) {}
+// 		
+// 		std::vector<TagDetection> extractTags( const cv::Mat& image ) const;
+// 		
+// 	};
 
 } // namespace
 

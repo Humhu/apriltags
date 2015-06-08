@@ -90,20 +90,20 @@ namespace AprilTags {
 		void draw(cv::Mat& image) const;
 	};
 	
-	struct MultiTagDetection
-	{
-	public:
-		
-		std::string family;
-		TagDetection detection;
-		
-		MultiTagDetection()
-		{}
-		MultiTagDetection( const TagDetection& det, const std::string& name )
-			: detection( det ), family( name )
-		{}
-		
-	};
+// 	struct MultiTagDetection
+// 	{
+// 	public:
+// 		
+// 		std::string family;
+// 		TagDetection detection;
+// 		
+// 		MultiTagDetection()
+// 		{}
+// 		MultiTagDetection( const TagDetection& det, const std::string& name )
+// 			: detection( det ), family( name )
+// 		{}
+// 		
+// 	};
 
 } // namespace
 
